@@ -118,8 +118,24 @@ The `with rollup` output is:
 | 2001 | USA     | NULL       |   3000 |
 | 2001 | NULL    | NULL       |   3010 |
 | NULL | NULL    | NULL       |   7535 |
-+------+---------+------------+--------+
 ```
+
+**2. join...on**
+`join` makes two tables into one, and there are three different `join` method:
+
+1. `inner join` equals to `join`, which only get data mathching the `on` condition, like:
+   ```sql
+    select a.id, b.name from a join b on a.id = b.id
+   ```
+
+   it's equal to that:
+   ```sql
+    select a.id, b.name from a, b where a.id = b.id
+   ```
+
+2. `left join` order gets all left table's data and matching `on` condition's right table's data
+3. `right join` is the same as above but shows all right table's data
+
 
 ## Mysql Basic
 
@@ -127,4 +143,12 @@ The `with rollup` output is:
 
 ![](img/v2-c6f8842e2b581dd393b50305f3e43f85_1440w.jpg)
 
-> mysql每一步都会产生一个虚拟表，只有最后一个
+> mysql每一步都会产生一个虚拟表，只有最后一个虚拟表返回给用户
+
+1. `from...join...on` is the first step to create a temporary table(VT1) using condition `on`
+2. `where...` is the second step to evaluate all rows according the `where` conditions to determine every row should be discared or retained(VT2)
+3. `group by...(with rollup)` is the 3rd step to create VT3
+4. `having...` like `having count(*) > 20`, in which you can see the condition of `having` must be operation on `group`
+5. `select...` is the step to select specific columns
+6. `order by...(desc)` is just as its name implies
+7. `limit...(offset...)` acts like cursor and count
