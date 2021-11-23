@@ -4,6 +4,10 @@
   - [Deep Well](#deep-well)
     - [Data Storage](#data-storage)
       - [Mysql](#mysql)
+  - [Basic & Important](#basic--important)
+    - [Go error](#go-error)
+  - [Reading Notes](#reading-notes)
+    - [Designing Data-Intensive Applications](#designing-data-intensive-applications)
 
 
 ## Deep Well
@@ -12,4 +16,16 @@
 
 #### Mysql
 
-[mysql基础知识](mysql.md)# deposit-note
+[mysql基础知识](mysql.md)
+
+## Basic & Important
+
+### Go error
+
+[Go error 详解](error.md)
+
+## Reading Notes
+
+### Designing Data-Intensive Applications
+
+

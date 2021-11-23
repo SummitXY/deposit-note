@@ -6,6 +6,7 @@
     - [Especial Order](#especial-order)
   - [Mysql Basic](#mysql-basic)
     - [Mysql 命令的执行顺序](#mysql-命令的执行顺序)
+  - [References](#references)
 
 ## Mysql In MacOS
 
@@ -145,10 +146,14 @@ The `with rollup` output is:
 
 > mysql每一步都会产生一个虚拟表，只有最后一个虚拟表返回给用户
 
-1. `from...join...on` is the first step to create a temporary table(VT1) using condition `on`
+1. `from...(inner/left/right)join...on` is the first step to create a temporary table(VT1) using condition `on`
 2. `where...` is the second step to evaluate all rows according the `where` conditions to determine every row should be discared or retained(VT2)
 3. `group by...(with rollup)` is the 3rd step to create VT3
 4. `having...` like `having count(*) > 20`, in which you can see the condition of `having` must be operation on `group`
 5. `select...` is the step to select specific columns
 6. `order by...(desc)` is just as its name implies
 7. `limit...(offset...)` acts like cursor and count
+
+
+## References
+1. https://qxf2.com/blog/mysql-query-execution/
