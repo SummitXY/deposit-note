@@ -7,6 +7,8 @@
     - [3. Data Model](#3-data-model)
     - [4. 声明式语言 vs 命令式语言](#4-声明式语言-vs-命令式语言)
     - [MapReduce Query](#mapreduce-query)
+    - [Use RDS to Implement Graph Storage](#use-rds-to-implement-graph-storage)
+    - [存储引擎](#存储引擎)
   - [References](#references)
 
 ## Data System Basic
@@ -62,8 +64,10 @@ But the QPS of writing into cache would be very high. Every user has 75 follower
 
 面向文档的数据库：[MongoDB](mongodb.md) RethinkDB CouchDB 使用JSON来表示存储结构
 
-**Sql VS NoSql(文档数据库)**
-1. 文档数据库更灵活，可以随意更新“列”字段
+Popular Databases:
+1. 关系型Database
+2. 文档型Database
+3. 图型Database
 
 
 ### 4. 声明式语言 vs 命令式语言
@@ -166,6 +170,112 @@ The specific steps:
 1. 通过`query`来筛符合条件的`document`
 2. 每个`document`跑一遍`map()`，上述两个document跑完得到的结果`emit("1995-12",3)`和`emit("1995-12",4)`
 3. 到`reduce`这一步，参数`key`为`"1995-12"`，`values`为`[3,4]`，输出到document`monthlySharkReport`=7
+
+### Use RDS to Implement Graph Storage
+
+```sql
+CREATE TABLE vertices (
+  vertex_id  INTEGER PRIMARY KEY,
+  properties JSON
+);
+
+CREATE TABLE edges (
+  edge_id     INTEGER PRIMARY KEY,
+  tail_vertex INTEGER REFERENCES vertices (vertex_id),
+  head_vertex INTEGER REFERENCES vertices (vertex_id),
+  label       TEXT,
+  properties  JSON
+);
+```
+
+### 存储引擎
+
+目前常见的有两大类存储引擎：
+1. log-structured
+2. page-oriented
+
+Use `bash` order to create the easiest sotrage:
+```bash
+#!/bin/bash
+# xydb.sh
+xyset () {
+	echo "$1,$2" >> ~/Desktop/xydatabase
+}
+
+xyget () {
+	grep "^$1," ~/Desktop/xydatabase | sed -e "s/^$1,//" | tail -n 1
+}
+
+```
+
+And you can code in shell:
+```bash
+> source xydb.sh
+> xyset lier '{"name":"Sis Lier","home":"London"}'
+> xyget lier
+```
+
+这个最简单的数据库写入的时间复杂度还好，因为是文件尾追加写入的，但读取时间是O(n)，不太OK
+
+Explain the Linux order:
+1. `echo "xxx" >> zzz`: wirte xxx to append the end of zzz
+2. `echo "xxx" > zzz`: write xxx to cover the content of zzz
+3. `grep 'xxx' zzz`: 在zzz里查找xxx，并返回xxx所在的行：
+   ```bash
+    // zzz:
+    apache,16
+    bierson,22
+    ciskpa,20
+
+    // order:
+    grep 'a' zzz
+
+    // output:
+    apache,16
+    ciskpa,20
+   ```
+4. `grep '^xxx' zzz`: 查找以xxx开头的行
+5. `sed -e 's/xxx/yyy/'` 把管道的每行数据的第一个xxx替换为yyy(`sed`前一般有`grep|nl`命令)
+6. `sed -e 's/xxx/yyy/g'` 把管道的每行数据的所有xxx替换为yyy
+7. `tail -n 1` 显示管道尾部最下的1行数据
+
+因为O(n)的时间复杂度很难让人接受，所以需要用到索引Index
+
+Similarly, let's see the easiest way to make `Index`
+
+![](img/fig1-3.png)
+
+把每个记录的在文件中的`offset`存进内存，然后读磁盘的时候直接根据偏移量读数据
+
+那么如何解决日志`log`过长造成磁盘耗尽呢，就需要把log分段`segment`处理，在合适的时机把段进行压缩`compress`和合并`merge`
+> 这里的`log`不仅仅是作为“日志”使用，其本身就是存储数据的地方
+
+![](img/fig3-3.png)
+
+这样每个段都有一个对应的内存哈希`Index`，当要query一个键的时候，从最新段的内存哈希查有没有查询的key，如果有就直接根据内存哈希的offset来从磁盘取数据，
+如果没有再查看第二新的段，以此类推
+
+The more efficient way of compressing and merging:
+
+使用`SSTable(Sorted String Table)`，把每个段的数据按照键来排序：
+   ![](img/fig3-4.png)
+`SSTable`除了可以提升merge效率，还有一个好处是内存哈希可以不用存该段的所有的key，
+因为是排好序的只要找到所需key所在的区间就可以了
+   ![](img/fig3-5.png)
+
+Now, our easy storage engine is done:
+
+1. 写入时先写入内存(红黑树)，当超过一定阈值(比如几兆)，将内存缓存以`SSTable`格式写入磁盘，因为红黑树可以按顺序读，所以写入磁盘的段也是按顺序的
+2. 起新的内存缓存并重复1步骤，同时在一定时机将磁盘执行压缩和合并工作
+3. 读取时按照内存缓存的新旧顺序读取
+
+这个方案有一个问题，就是当崩溃时最新的还没落磁盘的内存缓存的数据会丢失，
+这就需要有一个专门的日志来执行崩溃后的恢复工作，这个日志类似于存储数据的日志，
+但是当有段落磁盘成功时可以将旧的日志删掉
+
+Above storage engin is named as `LSM` storage engin which is involved in `LevelDB` and `RocksDB`
+
+但`LSM`也有问题，查询最差的情况下你必须从最新的段读到最旧的段(如果内存缓存不存所有的key的话)
 
 ## References
 1. https://github.com/Vonng/ddia
