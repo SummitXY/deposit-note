@@ -4,7 +4,7 @@
   - [Deep Well](#deep-well)
     - [Data Storage](#data-storage)
       - [Mysql](#mysql)
-    - [NoSql](#nosql)
+      - [NoSql](#nosql)
   - [Basic & Important](#basic--important)
     - [Go error](#go-error)
   - [Reading Notes](#reading-notes)
@@ -19,7 +19,7 @@
 
 [mysql基础知识](mysql.md)
 
-### NoSql
+#### NoSql
 
 
 

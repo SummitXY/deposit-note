@@ -6,6 +6,7 @@
     - [2. 应对负载增加的方法](#2-应对负载增加的方法)
     - [3. Data Model](#3-data-model)
     - [4. 声明式语言 vs 命令式语言](#4-声明式语言-vs-命令式语言)
+    - [MapReduce Query](#mapreduce-query)
   - [References](#references)
 
 ## Data System Basic
@@ -119,6 +120,52 @@ Meanwhile, there are other advantages belowing:
 1. 调用者只需要写出想要的数据类型、组合方式等信息，隐藏具体实现，方便后续在不更改接口的前提的情况下优化
 
 
+### MapReduce Query
+
+MapReduce is a coding model(编程模型), which process huge amount of data in multi machines
+
+比如使用`MapReduce`来查询`mongodb`数据：
+
+For example, two `documents`:
+```json
+    {
+  observationTimestamp: Date.parse(  "Mon, 25 Dec 1995 12:34:56 GMT"),
+  family: "Sharks",
+  species: "Carcharodon carcharias",
+  numAnimals: 3
+}
+{
+  observationTimestamp: Date.parse("Tue, 12 Dec 1995 16:17:18 GMT"),
+  family: "Sharks",
+  species:    "Carcharias taurus",
+  numAnimals: 4
+}
+
+```
+
+使用JS的mapreduce方法来获得每个月观察到的鲨鱼的数量：
+```js
+db.observations.mapReduce(function map() {
+        var year = this.observationTimestamp.getFullYear();
+        var month = this.observationTimestamp.getMonth() + 1;
+        emit(year + "-" + month, this.numAnimals);
+    },
+    function reduce(key, values) {
+        return Array.sum(values);
+    },
+    {
+        query: {
+          family: "Sharks"
+        },
+        out: "monthlySharkReport"
+    });
+
+```
+
+The specific steps:
+1. 通过`query`来筛符合条件的`document`
+2. 每个`document`跑一遍`map()`，上述两个document跑完得到的结果`emit("1995-12",3)`和`emit("1995-12",4)`
+3. 到`reduce`这一步，参数`key`为`"1995-12"`，`values`为`[3,4]`，输出到document`monthlySharkReport`=7
 
 ## References
 1. https://github.com/Vonng/ddia
