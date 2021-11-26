@@ -275,7 +275,7 @@ Now, our easy storage engine is done:
 
 Above storage engin is named as `LSM` storage engin which is involved in `LevelDB` and `RocksDB`
 
-但`LSM`也有问题，查询最差的情况下你必须从最新的段读到最旧的段(如果内存缓存不存所有的key的话)
+但`LSM`也有问题，查询最差的情况下你必须从最新的段读到最旧的段(如果内存缓存不存所有的key的话)，所以通常要额外加个Bloom过滤器
 
 ## References
 1. https://github.com/Vonng/ddia
