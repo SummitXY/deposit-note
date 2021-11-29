@@ -213,6 +213,7 @@ And you can code in shell:
 > source xydb.sh
 > xyset lier '{"name":"Sis Lier","home":"London"}'
 > xyget lier
+> {"name":"Sis Lier","home":"London"}
 ```
 
 这个最简单的数据库写入的时间复杂度还好，因为是文件尾追加写入的，但读取时间是O(n)，不太OK
@@ -243,9 +244,9 @@ Explain the Linux order:
 
 Similarly, let's see the easiest way to make `Index`
 
-![](img/fig1-3.png)
+![](img/fig3-1.png)
 
-把每个记录的在文件中的`offset`存进内存，然后读磁盘的时候直接根据偏移量读数据
+把每个记录的在文件中的`offset`存进内存，然后读磁盘的时候直接根据偏移量读数据(like the linux order `pread`)
 
 那么如何解决日志`log`过长造成磁盘耗尽呢，就需要把log分段`segment`处理，在合适的时机把段进行压缩`compress`和合并`merge`
 > 这里的`log`不仅仅是作为“日志”使用，其本身就是存储数据的地方
