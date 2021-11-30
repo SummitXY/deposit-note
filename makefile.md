@@ -7,6 +7,7 @@
 ## Basic Use
 
 ```
+# Makefile
 say_hello:
     @echo "Hello"
 ```
@@ -15,6 +16,36 @@ say_hello:
 > make
 > Hello
 
+```
+
+multiple order
+
+```
+say_hello:
+        @echo "Hello World"
+
+generate:
+        @echo "Creating empty text files..."
+        touch file-{1..10}.txt
+```
+
+If you run `make`, there would be only the first order to be executed.
+
+If you wanna run all order, follow this:
+```
+all: say_hello generate
+say_hello:
+        @echo "Hello World"
+
+generate:
+        @echo "Creating empty text files..."
+        touch file-{1..10}.txt
+```
+
+The terminal will show:
+```
+> Hello World
+> Creating empty text files...
 ```
 
 ## References
